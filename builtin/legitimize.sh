@@ -13,7 +13,7 @@ if [ ! -n "$exists" ]
     echo "Cleaning workspace..."
     git rm --force --quiet -r .
 
-    echo "Initialising tracking directory..."
+    echo "Initializing tracking directory..."
     mkdir .tracking/
     cd .tracking/
     mkdir users/
@@ -23,7 +23,7 @@ if [ ! -n "$exists" ]
 
     cd ..
     git add .tracking/ > /dev/null
-    git commit -m 'Initialised .tracking branch' > /dev/null
+    git commit -m 'Initialized .tracking branch' > /dev/null
 
     echo "Restoring workspace..."
     git checkout $current_branch > /dev/null
