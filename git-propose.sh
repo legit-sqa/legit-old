@@ -27,9 +27,7 @@ if ! git show-ref --quiet refs/heads/tracking; then
     exit -1
 fi
 
-# Check we don't have changes in the working tree
-changes=`git diff-index --quiet HEAD --`
-if [ -n "$changes" ]; then
+if ! git diff-index --quiet HEAD --; then
     >&2 echo "fatal: you have unstashed changes in your working tree"
     exit -2
 fi
