@@ -3,13 +3,18 @@
 orig_head=`git symbolic-ref -q --short HEAD`
 stashed=0
 
-if git diff-index --quiet HEAD; then
-    git stash > /dev/null
-    stashed = 1
+# Check that the current branch exists - so we can check if it has
+# unstashed changed
+if git show-ref --quiet refs/heads/$orig_head; then
+    # Check if we need to stash some changes
+    if git diff-index --quiet HEAD --; then
+        git stash > /dev/null
+        stashed = 1
+    fi
 fi
 
 # If we don't have a tracking branch, we must make one
-if ! git show-ref refs/heads/tracking; then
+if ! git show-ref --quiet refs/heads/tracking; then
     git checkout --orphan tracking > /dev/null
 
     # Git only allows us to clean up when there's something to delete
@@ -56,7 +61,7 @@ git commit -m 'Initialized .tracking branch' > /dev/null
 # If this is a new repository, it's possible that the branch we were
 # just in is actually empty (and therefore doesn't exist). If that's the
 # case - make one
-if ! git show-ref refs/heads/$orig_head; then
+if ! git show-ref --quiet refs/heads/$orig_head; then
     git checkout --orphan $orig_head > /dev/null
 
     git rm --force --quiet -r . > /dev/null
