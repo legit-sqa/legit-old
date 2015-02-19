@@ -10,8 +10,12 @@ do
     case "$1" in
         -m)
             shift
-            message=$1
 
+            # Get the message, but trim whitespace from it
+            message=`echo $1 | sed 's/^\s*//;s/\s*$//'`
+
+            # This will be blank if the user either failed to provide a
+            # message, or if it was only whitespace (which we reject)
             if [ -z "$message" ]; then
                 usage
             fi
