@@ -471,6 +471,7 @@ SCRIPT_SH += git-submodule.sh
 SCRIPT_SH += git-web--browse.sh
 SCRIPT_SH += git-legitimize.sh
 SCRIPT_SH += git-legitimise.sh
+SCRIPT_SH += git-propose.sh
 
 
 SCRIPT_LIB += git-mergetool--lib
