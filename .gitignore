@@ -76,6 +76,8 @@
 /git-init-db
 /git-interpret-trailers
 /git-instaweb
+/git-legitimize
+/git-legitimise
 /git-log
 /git-ls-files
 /git-ls-remote
@@ -106,6 +108,7 @@
 /git-pack-refs
 /git-parse-remote
 /git-patch-id
+/git-propose
 /git-prune
 /git-prune-packed
 /git-pull
