@@ -388,7 +388,7 @@ static struct cmd_struct commands[] = {
 	{ "clean", cmd_clean, RUN_SETUP | NEED_WORK_TREE },
 	{ "clone", cmd_clone, NO_SETUP },
 	{ "column", cmd_column, RUN_SETUP_GENTLY },
-	{ "commit", cmd_commit, RUN_SETUP | NEED_WORK_TREE },
+	{ "do-commit", cmd_commit, RUN_SETUP | NEED_WORK_TREE },
 	{ "commit-tree", cmd_commit_tree, RUN_SETUP },
 	{ "config", cmd_config, RUN_SETUP_GENTLY },
 	{ "count-objects", cmd_count_objects, RUN_SETUP },
@@ -572,6 +572,14 @@ static int run_argv(int *argcp, const char ***argv)
 	int done_alias = 0;
 
 	while (1) {
+        /* Rewrite commit command calls to check-commit to ensure we're
+         * not commiting on a locked branch
+         */
+        if (strcmp(*argv[0], "commit") == 0)
+        {
+            *argv[0] = "check-commit";
+        }
+
 		/* See if it's a builtin */
 		handle_builtin(*argcp, *argv);
 

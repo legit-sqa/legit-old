@@ -86,7 +86,7 @@ echo $name >> open
 git add open >> /dev/null 2>&1
 git add $name >> /dev/null 2>&1
 
-git commit --quiet -m "Proposed: $name"
+git do-commit --quiet -m "Proposed: $name"
 
 # Need to be back in the tree root so git can delete .tracking when we
 # switch back to the proposal branch
