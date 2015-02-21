@@ -31,7 +31,7 @@ do
             no_check=true ;;
         -h|--help)
             usage ;;
-        *)    
+        *)
             commit_args+=("\"$1\"") ;;
             
     esac
