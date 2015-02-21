@@ -2,7 +2,8 @@
 
 run_git()
 {
-    exit `git do-commit ${commit_args[*]}`
+    eval git do-commit ${commit_args[*]}
+    exit $?
 }
 
 usage()
@@ -30,17 +31,24 @@ do
             no_check=true ;;
         -h|--help)
             usage ;;
-        *)
-            commit_args+=("$1") ;;
+        *)    
+            commit_args+=("\"$1\"") ;;
+            
     esac
     shift
 done
 
-. git-sh-setup
+# This is not a legit directory, so we should just allow the commit to
+# run as expected
+if ! git show-ref --quiet refs/heads/tracking; then
+    run_git
+fi
 
 if test $no_check = true; then
     run_git
 fi
+
+. git-sh-setup
 
 require_work_tree
 
