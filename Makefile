@@ -474,6 +474,7 @@ SCRIPT_SH += git-legitimise.sh
 SCRIPT_SH += git-propose.sh
 SCRIPT_SH += git-check-commit.sh
 SCRIPT_SH += git-show-proposals.sh
+SCRIPT_SH += git-proposal-details.sh
 
 
 SCRIPT_LIB += git-mergetool--lib

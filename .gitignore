@@ -109,6 +109,7 @@
 /git-pack-refs
 /git-parse-remote
 /git-patch-id
+/git-proposal-details
 /git-propose
 /git-prune
 /git-prune-packed
