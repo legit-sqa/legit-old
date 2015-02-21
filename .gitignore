@@ -153,6 +153,7 @@
 /git-show
 /git-show-branch
 /git-show-index
+/git-show-proposals
 /git-show-ref
 /git-stage
 /git-stash
