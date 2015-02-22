@@ -59,10 +59,6 @@ if [ ! -n "$message" ]; then
     # Remove comments, whitespace and blank lines
     message=`sed '/\s*#/d;s/^\s*//;s/\s*$//;/./,$!d' .git/PROPOSAL_EDITMSG`
 
-    printf '#'
-    printf "$message"
-    printf '#'
-
     if [ -z "$message" ]; then
         echo "Aborting because of empty message"
         exit 0
