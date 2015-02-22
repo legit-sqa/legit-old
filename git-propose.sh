@@ -98,7 +98,6 @@ found=
 based_on=
 parent_commit=
 explored=()
-
 # Find what this is based on
 for commit in $(git rev-list $name)
 do
@@ -131,10 +130,30 @@ do
         # Check if this commit is in a proposal
         branch_head=`git rev-parse --verify $branch`
         if [ -d .tracking/proposals/$branch_head ]; then
-            found=true
-            based_on=$branch_head
-            parent_commit=$commit
-            break 2
+            while IFS=: read key value
+            do
+                value=$(echo $value | sed 's/^\s*//;s/\s*$//')
+                key=$(echo $key | tr '[:upper:]' '[:lower:]')
+
+                if [ "$key" = "start" ]
+                then
+                    if [ "$value" = "$commit" ] || ! git merge-base --is-ancestor $value $commit
+                    then
+                        # Continue searching through the branches on this
+                        # commit
+                        continue 2
+                    else
+                        found=true
+                        based_on=$branch_head
+                        parent_commit=$commit
+
+                        # We're done - break out of all loops
+                        break 3
+                    fi
+                fi
+            done < .tracking/proposals/$branch_head/proposal
+
+            >&2 echo "warning: malformed proposal ($branch_head) is missing start header"
         fi
     done
 
