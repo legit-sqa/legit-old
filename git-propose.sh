@@ -3,8 +3,28 @@
 USAGE='[-m <message>]'
 . git-sh-setup
 
+# Why on earth do I have to write my own contains function!?
+contains() {
+    search=$1
+    shift
+    array=$*
+    if [[ ${array[@]} == *$search* ]]
+    then
+        for element in "${array[@]}"
+        do
+            if [[ $element == $search ]]
+            then
+                return 0
+            fi
+        done
+    fi
+
+    return 1
+}
+
 # Get the commit message
 message=
+is_fix=false
 while test $# != 0
 do
     case "$1" in
@@ -21,6 +41,8 @@ do
             fi
             shift
             ;;
+        -f|--is-fix)
+            is_fix=true ;;
         *)
             usage
     esac
@@ -75,10 +97,87 @@ if [ -d .tracking/proposals/$name ]; then
     exit -3
 fi
 
+first=true
+found=
+based_on=
+parent_commit=
+explored=()
+
+# Find what this is based on
+for commit in $(git rev-list $name)
+do
+    for branch in $(git branch --contains $commit | sed 's/\*//;s/ *//')
+    do
+        if test true = $first; then
+            explored+=("$branch")
+            continue
+        fi
+
+        # Check if we've already inspected this branch. If we have it
+        # obviously didn't yield anything, so we can skip it here
+        if contains $branch $explored; then
+            continue
+        fi
+
+        # Mark the branch as explored so we don't have to mess about
+        # with it again
+        explored+=("$branch")
+
+        # Check if this commit is in a locked branch
+        # If it is, we must be working of this
+        locked=`git config --file .tracking/config branch.$branch.locked`
+        if [ "$locked" = "true" ]; then
+            found=true
+            parent_commit=$commit
+            break 2
+        fi
+
+        # Check if this commit is in a proposal
+        branch_head=`git rev-parse --verify $branch`
+        if [ -d .tracking/proposals/$branch_head ]; then
+            found=true
+            based_on=$branch_head
+            parent_commit=$commit
+            break 2
+        fi
+    done
+
+    if test true = $first; then
+        first=false
+    fi
+done
+
+if [ $found = false ]; then
+    git checkout --quiet $orig_head
+    die "Couldn't find a parent proposal or locked branch for HEAD"
+fi
+
+if test true = "$is_fix" && [ -z "$based_on" ]; then
+    git checkout --quiet $orig_head
+    die "You've specified this is a fix, but the proposal isn't based on a proposal"
+fi
+
 # Make the proposal and fill it with the proposal message
 mkdir .tracking/proposals/$name
 cd .tracking/proposals/$name
-echo $message > proposal
+
+echo "Proposer: $(git config user.name) <$(git config user.email)>" > proposal
+echo "Submitted-at: $(date -R)" >> proposal
+echo "Status: Open" >> proposal
+echo "Votes: 0" >> proposal
+echo "Start: $parent_commit" >> proposal
+
+if [ -n "$based_on" ]; then
+    if test true = "$is_fix"; then
+        echo "Fix-of: $based_on" >> proposal
+    else
+        echo "Extension-of: $based_on" >> proposal
+    fi
+fi
+
+echo "" >> proposal
+echo "$message" >> proposal
+
 cd ..
 echo $name >> open
 
@@ -86,13 +185,13 @@ echo $name >> open
 git add open >> /dev/null 2>&1
 git add $name >> /dev/null 2>&1
 
-git do-commit --quiet -m "Proposed: $name"
+git-commit --quiet -m "Proposed: $name"
 
 # Need to be back in the tree root so git can delete .tracking when we
 # switch back to the proposal branch
 cd ../..
 
 git checkout --quiet $orig_head
-git checkout -b --quiet proposals/$name
+git checkout --quiet -b proposals/$name
 
 echo "Created Proposal: $name"
