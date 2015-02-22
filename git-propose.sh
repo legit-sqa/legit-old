@@ -1,26 +1,7 @@
 #!/bin/sh
 
 USAGE='[-m <message>]'
-. git-sh-setup
-
-# Why on earth do I have to write my own contains function!?
-contains() {
-    search=$1
-    shift
-    array=$*
-    if [[ ${array[@]} == *$search* ]]
-    then
-        for element in "${array[@]}"
-        do
-            if [[ $element == $search ]]
-            then
-                return 0
-            fi
-        done
-    fi
-
-    return 1
-}
+. git-legit-setup
 
 # Get the commit message
 message=
@@ -93,81 +74,15 @@ if [ -d .tracking/proposals/$name ]; then
     exit -3
 fi
 
-first=true
-found=
-based_on=
-parent_commit=
-explored=()
-# Find what this is based on
-for commit in $(git rev-list $name)
-do
-    for branch in $(git branch --contains $commit | sed 's/\*//;s/ *//')
-    do
-        if test true = $first; then
-            explored+=("$branch")
-            continue
-        fi
+parent=(`find_branch_point $name`)
 
-        # Check if we've already inspected this branch. If we have it
-        # obviously didn't yield anything, so we can skip it here
-        if contains $branch $explored; then
-            continue
-        fi
-
-        # Mark the branch as explored so we don't have to mess about
-        # with it again
-        explored+=("$branch")
-
-        # Check if this commit is in a locked branch
-        # If it is, we must be working of this
-        locked=`git config --file .tracking/config branch.$branch.locked`
-        if [ "$locked" = "true" ]; then
-            found=true
-            parent_commit=$commit
-            break 2
-        fi
-
-        # Check if this commit is in a proposal
-        branch_head=`git rev-parse --verify $branch`
-        if [ -d .tracking/proposals/$branch_head ]; then
-            while IFS=: read key value
-            do
-                value=$(echo $value | sed 's/^\s*//;s/\s*$//')
-                key=$(echo $key | tr '[:upper:]' '[:lower:]')
-
-                if [ "$key" = "start" ]
-                then
-                    if [ "$value" = "$commit" ] || ! git merge-base --is-ancestor $value $commit
-                    then
-                        # Continue searching through the branches on this
-                        # commit
-                        continue 2
-                    else
-                        found=true
-                        based_on=$branch_head
-                        parent_commit=$commit
-
-                        # We're done - break out of all loops
-                        break 3
-                    fi
-                fi
-            done < .tracking/proposals/$branch_head/proposal
-
-            >&2 echo "warning: malformed proposal ($branch_head) is missing start header"
-        fi
-    done
-
-    if test true = $first; then
-        first=false
-    fi
-done
-
-if [ $found = false ]; then
+if [ $? != 0 ]
+then
     git checkout --quiet $orig_head
     die "Couldn't find a parent proposal or locked branch for HEAD"
 fi
 
-if test true = "$is_fix" && [ -z "$based_on" ]; then
+if test true = "$is_fix" && [ -z "${parent[1]}" ]; then
     git checkout --quiet $orig_head
     die "You've specified this is a fix, but the proposal isn't based on a proposal"
 fi
@@ -180,13 +95,13 @@ echo "Proposer: $(git config user.name) <$(git config user.email)>" > proposal
 echo "Submitted-at: $(date -R)" >> proposal
 echo "Status: Open" >> proposal
 echo "Votes: 0" >> proposal
-echo "Start: $parent_commit" >> proposal
+echo "Start: ${parent[0]}" >> proposal
 
-if [ -n "$based_on" ]; then
+if [ -n "${parent[1]}" ]; then
     if test true = "$is_fix"; then
-        echo "Fix-of: $based_on" >> proposal
+        echo "Fix-of: ${parent[1]}" >> proposal
     else
-        echo "Extension-of: $based_on" >> proposal
+        echo "Extension-of: ${parent[1]}" >> proposal
     fi
 fi
 
