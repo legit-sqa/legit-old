@@ -56,7 +56,7 @@ cd ../..
 
 # Commit this initialisation to the tracking branch
 git add .tracking/ > /dev/null
-git do-commit --quiet -m 'Initialized .tracking branch'
+git-commit --quiet -m 'Initialized .tracking branch'
 
 # If this is a new repository, it's possible that the branch we were
 # just in is actually empty (and therefore doesn't exist). If that's the
