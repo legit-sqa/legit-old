@@ -2,7 +2,7 @@
 
 run_git()
 {
-    eval git do-commit ${commit_args[*]}
+    eval git-commit ${commit_args[*]}
     exit $?
 }
 
