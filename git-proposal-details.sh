@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. git-sh-setup
+. git-legit-setup
 
 require_work_tree
 
@@ -51,6 +51,12 @@ if [ -z "$proposal" ]; then
 fi
 
 cat .tracking/proposals/$proposal/proposal
+echo ""
+
+start=$(read_header start .tracking/proposals/$proposal/proposal)
+git diff $start..$proposal
+
+echo ""
 
 files=`find .tracking/proposals/$proposal/* -printf %f`
 
