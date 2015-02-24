@@ -106,3 +106,56 @@ find_branch_point()
 
     return 1
 }
+
+# Parses config files 
+read_values()
+{
+    # Overall Amounts
+    total_proposals=0 # Total amount of proposals
+    total_reviews=0   # Total amount of reviews
+    proposals=0 # Accepted - Rejected Proposals
+    reviews=0 # Good - Bad Reviews
+
+    # Specific Amounts
+    accepted=0     # Number of accepted proposals
+    good_reviews=0 # Number of reviews with the correct answer
+    good_accept=0
+    good_reject=0
+
+    local items=("$1:1")
+    local i=0
+
+    while test $i != ${#items[@]}
+    do
+        local item=(${items[$i]//:/ })
+        local multiplier=${item[1]}
+
+        item=${item[0]}
+        i=$(expr $i + 1)
+
+        for part in $(git config --file .tracking/config score.$item)
+        do
+            part=(${part//:/ })
+
+            local rule=${part[0]}
+            local num=${part[1]}
+
+            if [ -z "$num" ] || [ "$num" -le 0 ]
+            then
+                num=1
+            fi
+
+            local value=$(expr $num \* $multiplier)
+
+            case $rule in
+                proposals|reviews|total-proposals|total-reviews|accepted|good-reviews|good-accepts|good-rejects)
+                    rule=${rule//-/_}
+                    eval "$rule=\$(expr \${!rule} + $value)"
+                    ;;
+                *)
+                    items+=("$rule:$value")
+                    ;;
+            esac
+        done
+    done
+}
