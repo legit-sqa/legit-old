@@ -18,6 +18,9 @@ get_proposal()
     git checkout --quiet tracking -- .tracking/proposals/$proposal
 }
 
+do_diff=true
+do_reviews=true
+do_proposal=true
 while test $# != 0
 do
     case "$1" in
@@ -33,6 +36,12 @@ do
 
             get_proposal $proposal_branch
             ;;
+        --no-diff)
+            do_diff=false ;;
+        --no-reviews)
+            do_reviews=false ;;
+        --no-proposal)
+            do_proposal=false ;;
         *)
             usage
     esac
@@ -50,18 +59,26 @@ if [ -z "$proposal" ]; then
     get_proposal $head
 fi
 
-cat .tracking/proposals/$proposal/proposal
-echo ""
+if test true = "$do_proposal"
+then
+    cat .tracking/proposals/$proposal/proposal
+    echo ""
+fi
 
-start=$(read_header start .tracking/proposals/$proposal/proposal)
-git diff $start..$proposal
+if test true = "$do_diff"
+then
+    start=$(read_header start .tracking/proposals/$proposal/proposal)
+    git diff $start..$proposal
+    echo ""
+fi
 
-echo ""
+if test true = "$do_reviews"
+then
+    files=`find .tracking/proposals/$proposal/* -printf %f`
 
-files=`find .tracking/proposals/$proposal/* -printf %f`
-
-echo $files | while read $file; do
-    if [[ $file != "proposal" ]] && [ -n "$file" ]; then
-        cat .tracking/proposals/$proposal/$file
-    fi
-done
+    echo $files | while read $file; do
+        if [[ $file != "proposal" ]] && [ -n "$file" ]; then
+            cat .tracking/proposals/$proposal/$file
+        fi
+    done
+fi
