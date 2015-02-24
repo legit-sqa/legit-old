@@ -11,6 +11,7 @@
 /git
 /git-add
 /git-add--interactive
+/git-add-contributor
 /git-am
 /git-annotate
 /git-apply
