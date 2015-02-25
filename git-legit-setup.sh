@@ -42,6 +42,15 @@ read_header()
     return 1
 }
 
+replace_header()
+{
+    header=$1
+    value=$2
+    file=$3
+
+    cat $file | sed -r "s/^$header:.+\$/$header: $value/I" | cat > $file
+}
+
 # Finds the branch point of the given commit
 find_branch_point()
 {

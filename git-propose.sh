@@ -5,6 +5,8 @@ USAGE='[-m <message>]'
 
 # Get the commit message
 message=
+user=$(git config user.email)
+user=${user//@/_}
 is_fix=false
 while test $# != 0
 do
@@ -29,6 +31,11 @@ do
     esac
     shift
 done
+
+if ! test -n "$user"
+then
+    die "fatal: no user was found. Set one in git config"
+fi
 
 # People need to specify a message!
 if [ ! -n "$message" ]; then
@@ -67,6 +74,11 @@ name=`git rev-parse --verify HEAD`
 
 # Let's do this
 git checkout --quiet tracking
+
+if ! [ -a .tracking/users/$user ]
+then
+    die "fatal: You aren't registered in the system"
+fi
 
 # Hash collisions shouldn't happen...
 if [ -d .tracking/proposals/$name ]; then
@@ -114,6 +126,12 @@ echo $name >> open
 # Git won't shutup when adding files, so pipe everything to /dev/null
 git add open >> /dev/null 2>&1
 git add $name >> /dev/null 2>&1
+
+cd ../users
+proposal_count=$(expr $(read_header proposals $user) + 1)
+replace_header Proposals $proposal_count $user
+
+git add $user >> /dev/null 2>&1
 
 git-commit --quiet -m "Proposed: $name"
 
