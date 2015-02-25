@@ -56,6 +56,7 @@ fi
 require_clean_work_tree
 cd_to_toplevel
 
+user_file=${email//@/_}
 orig_head=`git symbolic-ref -q --short HEAD`
 git checkout --quiet tracking
 
@@ -64,14 +65,14 @@ then
     mkdir .tracking/users
 fi
 
-if test -a .tracking/users/$email
+if test -a .tracking/users/$user_file
 then
     die "This user already exists in the system"
 fi
 
-touch .tracking/users/$email
+touch .tracking/users/$user_file
 
-cat > .tracking/users/$email <<EOF
+cat > .tracking/users/$user_file <<EOF
 User: $name
 Proposals: 0
 Accepted: 0
@@ -83,7 +84,7 @@ Good-Accepts: 0
 Good-Rejects: 0
 EOF
 
-git add .tracking/users/$email>> /dev/null 2>&1
+git add .tracking/users/$user_file>> /dev/null 2>&1
 
 git commit --quiet -m "Added User: $name <$email>"
 
