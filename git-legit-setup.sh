@@ -128,8 +128,8 @@ read_required_values()
     # Specific Amounts
     req_accepted=0     # Number of accepted proposals
     req_good_reviews=0 # Number of reviews with the correct answer
-    req_good_accept=0
-    req_good_reject=0
+    req_good_accepts=0
+    req_good_rejects=0
 
     local items=("$1:1")
     local i=0
