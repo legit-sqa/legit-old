@@ -111,6 +111,7 @@
 /git-pack-refs
 /git-parse-remote
 /git-patch-id
+/git-permissions
 /git-proposal-details
 /git-propose
 /git-prune

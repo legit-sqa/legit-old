@@ -477,6 +477,7 @@ SCRIPT_SH += git-show-proposals.sh
 SCRIPT_SH += git-proposal-details.sh
 SCRIPT_SH += git-legit-setup.sh
 SCRIPT_SH += git-add-contributor.sh
+SCRIPT_SH += git-permissions.sh
 
 
 SCRIPT_LIB += git-mergetool--lib
