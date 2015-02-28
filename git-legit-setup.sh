@@ -117,19 +117,19 @@ find_branch_point()
 }
 
 # Parses config files 
-read_values()
+read_required_values()
 {
     # Overall Amounts
-    total_proposals=0 # Total amount of proposals
-    total_reviews=0   # Total amount of reviews
-    proposals=0 # Accepted - Rejected Proposals
-    reviews=0 # Good - Bad Reviews
+    req_total_proposals=0 # Total amount of proposals
+    req_total_reviews=0   # Total amount of reviews
+    req_proposals=0 # Accepted - Rejected Proposals
+    req_reviews=0 # Good - Bad Reviews
 
     # Specific Amounts
-    accepted=0     # Number of accepted proposals
-    good_reviews=0 # Number of reviews with the correct answer
-    good_accept=0
-    good_reject=0
+    req_accepted=0     # Number of accepted proposals
+    req_good_reviews=0 # Number of reviews with the correct answer
+    req_good_accept=0
+    req_good_reject=0
 
     local items=("$1:1")
     local i=0
@@ -158,7 +158,7 @@ read_values()
 
             case $rule in
                 proposals|reviews|total-proposals|total-reviews|accepted|good-reviews|good-accepts|good-rejects)
-                    rule=${rule//-/_}
+                    rule="req_${rule//-/_}"
                     eval "$rule=\$(expr \${!rule} + $value)"
                     ;;
                 *)
