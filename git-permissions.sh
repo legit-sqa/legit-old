@@ -56,4 +56,4 @@ do_test "Reviews" $(expr $good_reviews - $bad_reviews) $req_reviews
 do_test "Good Accepts" $good_accepts $req_good_accepts
 do_test "Good Rejects" $good_rejects $req_good_rejects
 
-rm -r .tracking
+git rm --quiet -f -r .tracking
