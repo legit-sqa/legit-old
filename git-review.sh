@@ -1,0 +1,133 @@
+#!/bin/sh
+
+. git-legit-setup
+
+# Get the commit message
+message=
+user=$(git config user.email)
+user=${user//@/_}
+result=
+while test $# != 0
+do
+    case "$1" in
+        -m)
+            shift
+
+            # Get the message, but trim whitespace from it
+            message=`echo $1 | sed 's/^\s*//;s/\s*$//'`
+
+            # This will be blank if the user either failed to provide a
+            # message, or if it was only whitespace (which we reject)
+            if [ -z "$message" ]; then
+                usage
+            fi
+            shift
+            ;;
+        --approve)
+            result="approve" ;;
+        --reject)
+            result="reject" ;;
+        *)
+            usage
+    esac
+    shift
+done
+
+if ! test -n "$result"
+then
+    usage
+fi
+
+if ! test -n "$user"
+then
+    die "fatal: no user was found. Set one in git config"
+fi
+
+if ! git permissions review
+then
+    die
+fi
+
+# People need to specify a message!
+if [ ! -n "$message" ]; then
+    echo "# Please enter the review message. Lines starting" > .git/REVIEW_EDITMSG
+    echo "# with '#' will be ignored, and an empty message aborts the proposal." >> .git/REVIEW_EDITMSG
+
+    git_editor .git/REVIEW_EDITMSG
+
+    # Remove comments, whitespace and blank lines
+    message=`sed '/\s*#/d;s/^\s*//;s/\s*$//;/./,$!d' .git/REVIEW_EDITMSG`
+
+    if [ -z "$message" ]; then
+        echo "Aborting because of empty message"
+        exit 0
+    fi
+fi
+
+# Has this repo been legitimised?
+if ! git show-ref --quiet refs/heads/tracking; then
+    die "fatal: no tracking branch exists"
+fi
+
+require_clean_work_tree 'make a review'
+
+# Check we're not in a locked branch, or the tracking branch
+orig_head=`git symbolic-ref -q --short HEAD`
+if [ "$orig_head" = "tracking" ]; then
+    die "fatal: you are in the tracking branch. Please checkout the
+the branch you wish to review."
+fi
+
+# The commit at the head of the proposal is used as it's ID
+name=`git rev-parse --verify HEAD`
+
+# Let's do this
+git checkout --quiet tracking
+
+# Hash collisions shouldn't happen...
+if [ ! -d .tracking/proposals/$name ]; then
+    die "fatal: this proposal doesn't exist"
+fi
+
+if [ -e .tracking/proposals/$name/$user ]
+then
+    die "fatal: you have already reviewed this proposal"
+fi
+
+cd .tracking/proposals/$name
+
+vote_count=$(read_header votes proposal)
+
+echo "Reviewer: $(git config user.name) <$(git config user.email)>" > $user
+echo "Reviewed-at: $(date -R)" >> $user
+
+if test "reject" = "$status"
+then
+    echo "Result: Reject" >> $user
+    vote_count=$(expr $vote_count - 1)
+else
+    echo "Result: Accept" >> $user
+    vote_count=$(expr $vote_count + 1)
+fi
+
+echo "" >> $user
+echo "$message" >> $user
+
+replace_header Votes $vote_count proposal
+
+git add $user >> /dev/null 2>&1
+git add proposal >> /dev/null 2>&1
+
+cd ../../users/
+
+replace_header Reviews $(expr $(read_header reviews $user) + 1) $user
+
+git add $user >> /dev/null 2>&1
+
+cd ../..
+
+git-commit --quiet -m "Reviewed $name"
+
+git checkout --quiet $orig_head
+
+echo "Reviewed"
