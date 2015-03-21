@@ -74,11 +74,12 @@ fi
 
 if test true = "$do_reviews"
 then
-    files=`find .tracking/proposals/$proposal/* -printf %f`
-
-    echo $files | while read $file; do
+    for file in $(find .tracking/proposals/$proposal/* -printf %f\\n)
+    do
         if [[ $file != "proposal" ]] && [ -n "$file" ]; then
             cat .tracking/proposals/$proposal/$file
         fi
     done
 fi
+
+git rm --quiet -f -r .tracking/
