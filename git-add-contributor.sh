@@ -53,7 +53,7 @@ then
     fi
 fi
 
-require_clean_work_tree
+##require_clean_work_tree
 cd_to_toplevel
 
 user_file=${email//@/_}
@@ -84,7 +84,7 @@ Good-Accepts: 0
 Good-Rejects: 0
 EOF
 
-git add .tracking/users/$user_file>> /dev/null 2>&1
+git add .tracking/users/$user_file >> /dev/null 2>&1
 
 git commit --quiet -m "Added User: $name <$email>"
 
