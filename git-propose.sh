@@ -112,9 +112,13 @@ echo "Start: ${parent[0]}" >> proposal
 if [ -n "${parent[1]}" ]; then
     if test true = "$is_fix"; then
         echo "Fix-of: ${parent[1]}" >> proposal
+        append_header Fixed-By $name ../${parent[1]}/proposal
     else
         echo "Extension-of: ${parent[1]}" >> proposal
+        append_header Extended-By $name ../${parent[1]}/proposal
     fi
+
+    git add ../${parent[1]}/proposal > /dev/null 2>&1
 fi
 
 echo "" >> proposal
