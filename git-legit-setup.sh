@@ -26,20 +26,27 @@ read_header()
 {
     look_for=$1
     file=$2
+    return_val=1
+
 
     while IFS=: read key value
     do
         value=$(echo $value | sed 's/^\s*//;s/\s*$//')
         key=$(echo $key | tr '[:upper:]' '[:lower:]')
 
+        if [ ! -n "$key" ]
+        then
+            break
+        fi
+
         if [ "$key" = "$look_for" ]
         then
             echo $value
-            return 0
+            return_val=0
         fi
     done < $file
 
-    return 1
+    return $return_val
 }
 
 replace_header()
