@@ -101,7 +101,7 @@ vote_count=$(read_header votes proposal)
 echo "Reviewer: $(git config user.name) <$(git config user.email)>" > $user
 echo "Reviewed-at: $(date -R)" >> $user
 
-if test "reject" = "$status"
+if [[ "reject" == "$result" ]]
 then
     echo "Result: Reject" >> $user
     vote_count=$(expr $vote_count - 1)
@@ -157,7 +157,8 @@ then
                 header2="good-accepts"
             fi
 
-            file="users/$file"
+            file="./users/$file"
+
             replace_header $header1 $(expr $(read_header $header2 $file) + 1) $file
 
             git add $file >> /dev/null 2>&1
@@ -188,33 +189,38 @@ then
             fi
         fi
     done
-#else if test $vote_count -le $(expr $voteThreshold \* -1)
-#then
-#    replace_header Status Rejected proposal
-#
-#    for file in $(find proposals/$name/* -printf %f\\n)
-#    do
-#        if [[ $file != "proposal" ]] && [ -n "$file" ]; then
-#            result=$(read_header result $file)
-#
-#            file="users/$file"
-#
-#            if test $result == "Reject"
-#            then
-#                header1="Good-Rejects"
-#                header2="Good-rejects"
-#            else
-#                header1="Bad-Accepts"
-#                header2="Bad-accepts"
-#            fi
-#
-#            replace_header $header1 $(expr $(read_header $header2 $file) + 1) $file
-#
-#            git add $file >> /dev/null 2>&1
-#        fi
-#    done
-#
-#    git-commit --quiet -m "Rejected: $name"
+elif test $vote_count -le $(expr $voteThreshold \* -1)
+then
+    replace_header Status Rejected ./proposals/$name/proposal
+    sed '/$name/d' proposals/open | cat > ./proposals/open
+
+    git add proposals/$name/proposal >> /dev/null 2>&1
+    git add proposals/open >> /dev/null 2>&1
+
+    for file in $(find proposals/$name/* -printf %f\\n)
+    do
+        if [[ $file != "proposal" ]] && [ -n "$file" ]; then
+            result=$(read_header result proposals/$name/$file)
+
+            if test $result = "Reject"
+            then
+                header1="Good-Rejects"
+                header2="good-rejects"
+            else
+                header1="Bad-Accepts"
+                header2="bad-accepts"
+            fi
+
+            file="./users/$file"
+            replace_header $header1 $(expr $(read_header $header2 $file) + 1) $file
+
+            git add $file >> /dev/null 2>&1
+        fi
+    done
+
+    git-commit --quiet -m "Rejected: $name"
+
+    cd ..
 fi
 
 git checkout --quiet $orig_head
