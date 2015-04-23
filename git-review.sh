@@ -124,10 +124,97 @@ replace_header Reviews $(expr $(read_header reviews $user) + 1) $user
 
 git add $user >> /dev/null 2>&1
 
-cd ../..
+git-commit --quiet -m "Reviewed: $name"
+echo "Successfully Reviewed"
 
-git-commit --quiet -m "Reviewed $name"
+cd ..
+
+voteThreshold=$(git config --file config general.voteThreshold)
+
+if test $vote_count -ge $voteThreshold
+then
+    echo "The proposal has reached the required votes. Automatically approving..."
+    replace_header Status Accepted proposals/$name/proposal
+
+    sed '/$name/d' proposals/open | cat > proposals/open
+    echo $name >> proposals/pending
+    git add proposals/$name/proposal >> /dev/null 2>&1
+    git add proposals/open >> /dev/null 2>&1
+    git add proposals/pending >> /dev/null 2>&1
+
+    for file in $(find proposals/$name/* -printf %f\\n)
+    do
+        if [[ $file != "proposal" ]] && [ -n "$file" ]
+        then
+            result=$(read_header result proposals/$name/$file)
+
+            if [[ $result == "Reject" ]]
+            then
+                header1="Bad-Rejects"
+                header2="bad-rejects"
+            else
+                header1="Good-Accepts"
+                header2="good-accepts"
+            fi
+
+            file="users/$file"
+            replace_header $header1 $(expr $(read_header $header2 $file) + 1) $file
+
+            git add $file >> /dev/null 2>&1
+        fi
+    done
+
+    git-commit --quiet -m "Approved: $name"
+
+    cd ..
+
+    start=$(read_header start .tracking/proposals/$name/proposal)
+    for branch in $(git branch --contains $start | sed 's/\*//;s/ *//')
+    do
+        # Check if this commit is in a locked branch
+        locked=`git config --file .tracking/config branch.$branch.locked`
+        if [ "$locked" = "true" ]
+        then
+            echo "This proposal is ready to be merged. Attempting to automatically merge..."
+            git checkout $branch --quiet
+
+            if git merge $name --quiet --no-ff --no-commit > /dev/null 2>&1
+            then
+                git-commit --quiet -m "Merged: $name"
+                echo "Automatic merge successful"
+                break
+            else
+                echo "Automatic merge failed"
+            fi
+        fi
+    done
+#else if test $vote_count -le $(expr $voteThreshold \* -1)
+#then
+#    replace_header Status Rejected proposal
+#
+#    for file in $(find proposals/$name/* -printf %f\\n)
+#    do
+#        if [[ $file != "proposal" ]] && [ -n "$file" ]; then
+#            result=$(read_header result $file)
+#
+#            file="users/$file"
+#
+#            if test $result == "Reject"
+#            then
+#                header1="Good-Rejects"
+#                header2="Good-rejects"
+#            else
+#                header1="Bad-Accepts"
+#                header2="Bad-accepts"
+#            fi
+#
+#            replace_header $header1 $(expr $(read_header $header2 $file) + 1) $file
+#
+#            git add $file >> /dev/null 2>&1
+#        fi
+#    done
+#
+#    git-commit --quiet -m "Rejected: $name"
+fi
 
 git checkout --quiet $orig_head
-
-echo "Reviewed"
