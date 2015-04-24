@@ -23,6 +23,7 @@ do_merge()
 
         git commit --quiet -m "Merged: $name"
     else
+        git merge --abort
         return 1
     fi
 
@@ -204,16 +205,18 @@ then
         if [ "$locked" = "true" ]
         then
             echo "Attempting to automatically merge..."
-            do_merge $name $branch
-
-            for ext in $(read_header extended-by .tracking/proposals/$name/proposal)
-            do
-                if [ $(read_header status .tracking/proposals/$ext/proposal) = "Accepted" ]
-                then
-                    do_merge $ext $branch
-                fi
-            done
-
+            
+            if do_merge $name $branch
+            then
+                for ext in $(read_header extended-by .tracking/proposals/$name/proposal)
+                do
+                    if [ $(read_header status .tracking/proposals/$ext/proposal) = "Accepted" ]
+                    then
+                        do_merge $ext $branch
+                    fi
+                done
+            fi
+            
             break
         fi
     done
