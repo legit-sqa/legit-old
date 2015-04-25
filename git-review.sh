@@ -11,7 +11,7 @@ do_merge()
 
     if git merge $name --quiet --no-ff --no-commit > /dev/null 2>&1
     then
-        git-commit --quiet -m "Merged: $name"
+        git do-commit --quiet -m "Merged: $name"
 
         git checkout tracking --quiet
 
@@ -21,7 +21,7 @@ do_merge()
         replace_header Status Merged .tracking/proposals/$name/proposal
         git add .tracking/proposals/$name/proposal >> /dev/null 2>&1
 
-        git commit --quiet -m "Merged: $name"
+        git do-commit --quiet -m "Merged: $name"
     else
         git merge --abort
         return 1
@@ -152,7 +152,7 @@ replace_header Reviews $(expr $(read_header reviews $user) + 1) $user
 
 git add $user >> /dev/null 2>&1
 
-git-commit --quiet -m "Reviewed: $name"
+git do-commit --quiet -m "Reviewed: $name"
 echo "Successfully Reviewed"
 
 cd ..
@@ -193,7 +193,7 @@ then
         fi
     done
 
-    git-commit --quiet -m "Approved: $name"
+    git do-commit --quiet -m "Approved: $name"
 
     cd ..
 
@@ -215,8 +215,10 @@ then
                         do_merge $ext $branch
                     fi
                 done
+            else
+                echo "Automatic merged failed you can perform a merge proposal if you like"
             fi
-            
+
             break
         fi
     done
@@ -249,7 +251,7 @@ then
         fi
     done
 
-    git-commit --quiet -m "Rejected: $name"
+    git do-commit --quiet -m "Rejected: $name"
 
     cd ..
 fi

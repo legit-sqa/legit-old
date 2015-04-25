@@ -67,7 +67,7 @@ fi
 
 if test -a .tracking/users/$user_file
 then
-    die "This user already exists in the system"
+    die_neatly "This user already exists in the system"
 fi
 
 touch .tracking/users/$user_file
@@ -86,8 +86,8 @@ EOF
 
 git add .tracking/users/$user_file >> /dev/null 2>&1
 
-git commit --quiet -m "Added User: $name <$email>"
+git do-commit --quiet -m "Added User: $name <$email>"
 
-git checkout --quiet $orig_head
+return_to_orig_head
 
 echo "Added User: $name <$email>"

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. git-legit-setup.sh
+
 orig_head=`git symbolic-ref -q --short HEAD`
 stashed=0
 
@@ -56,19 +58,6 @@ cd ../..
 
 # Commit this initialisation to the tracking branch
 git add .tracking/ > /dev/null
-git-commit --quiet -m 'Initialized .tracking branch'
+git do-commit --quiet -m 'Initialized .tracking branch'
 
-# If this is a new repository, it's possible that the branch we were
-# just in is actually empty (and therefore doesn't exist). If that's the
-# case - make one
-if ! git show-ref --quiet refs/heads/$orig_head; then
-    git checkout --orphan $orig_head > /dev/null
-
-    git rm --force --quiet -r . > /dev/null
-else
-    git checkout $orig_head > /dev/null
-
-    if stashed; then
-        git stash pop > /dev/null
-    fi
-fi
+return_to_orig_head

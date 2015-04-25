@@ -64,9 +64,8 @@ require_clean_work_tree 'make a proposal'
 # Check we're not in a locked branch, or the tracking branch
 orig_head=`git symbolic-ref -q --short HEAD`
 if [ "$orig_head" = "tracking" ]; then
-    >&2 echo "fatal: you are in the tracking branch. Please checkout the
+    die "fatal: you are in the tracking branch. Please checkout the
 the branch you wish to propose."
-    exit -4
 fi
 
 # The commit at the head of the proposal is used as it's ID
@@ -77,13 +76,12 @@ git checkout --quiet tracking
 
 if ! [ -a .tracking/users/$user ]
 then
-    die "fatal: You aren't registered in the system"
+    die_neatly "fatal: You aren't registered in the system"
 fi
 
 # Hash collisions shouldn't happen...
 if [ -d .tracking/proposals/$name ]; then
-    >&2 echo "fatal: this proposal already exists"
-    exit -3
+    die_neatly "fatal: this proposal already exists"
 fi
 
 parent=(`find_branch_point $name`)
@@ -91,12 +89,11 @@ parent=(`find_branch_point $name`)
 if [ $? != 0 ]
 then
     git checkout --quiet $orig_head
-    die "Couldn't find a parent proposal or locked branch for HEAD"
+    die_neatly "Couldn't find a parent proposal or locked branch for HEAD"
 fi
 
 if test true = "$is_fix" && [ -z "${parent[1]}" ]; then
-    git checkout --quiet $orig_head
-    die "You've specified this is a fix, but the proposal isn't based on a proposal"
+    die_neatly "You've specified this is a fix, but the proposal isn't based on a proposal"
 fi
 
 # Make the proposal and fill it with the proposal message
@@ -137,7 +134,7 @@ replace_header Proposals $proposal_count $user
 
 git add $user >> /dev/null 2>&1
 
-git-commit --quiet -m "Proposed: $name"
+git do-commit --quiet -m "Proposed: $name"
 
 # Need to be back in the tree root so git can delete .tracking when we
 # switch back to the proposal branch
