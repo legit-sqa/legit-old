@@ -24,7 +24,6 @@ do
             if [ -z "$message" ]; then
                 usage
             fi
-            shift
             ;;
         -f|--is-fix)
             is_fix=true ;;
