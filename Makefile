@@ -479,6 +479,7 @@ SCRIPT_SH += git-legit-setup.sh
 SCRIPT_SH += git-add-contributor.sh
 SCRIPT_SH += git-permissions.sh
 SCRIPT_SH += git-review.sh
+SCRIPT_SH += git-merge-proposal.sh
 
 SCRIPT_LIB += git-mergetool--lib
 SCRIPT_LIB += git-parse-remote

@@ -14,9 +14,9 @@ return_to_orig_head()
     else
         git checkout $orig_head > /dev/null
 
-        if $stashed; then
-            git stash pop > /dev/null
-        fi
+        #if [ $stashed -eq 1 ]; then
+        #    git stash pop > /dev/null
+        #fi
     fi
 }
 
@@ -24,6 +24,73 @@ die_neatly()
 {
     return_to_orig_head
     die $1
+}
+
+do_merge()
+{
+    local name=$1
+    local branch=$2
+    local keep=$3
+
+    git checkout $branch --quiet
+
+    if git merge $name --quiet --no-ff --no-commit > /dev/null 2>&1
+    then
+        git do-commit --quiet -m "Merged: $name"
+
+        git checkout tracking --quiet
+
+        sed "/$name/d" .tracking/proposals/pending | cat > .tracking/proposals/pending
+        git add .tracking/proposals/pending >> /dev/null 2>&1
+
+        replace_header Status Merged .tracking/proposals/$name/proposal
+        git add .tracking/proposals/$name/proposal >> /dev/null 2>&1
+
+        git do-commit --quiet -m "Merged: $name"
+    else
+        if test ! -n "$keep"
+        then
+            git merge --abort
+        fi
+
+        return 1
+    fi
+
+    return 0
+}
+
+merge()
+{
+    local name=$1
+    local keep=$2
+
+    start=$(read_header start .tracking/proposals/$name/proposal)
+    for branch in $(git branch --contains $start | sed 's/\*//;s/ *//')
+    do
+        # Check if this commit is in a locked branch
+        locked=`git config --file .tracking/config branch.$branch.locked`
+        if [ "$locked" = "true" ]
+        then
+            echo "Attempting to automatically merge..."
+            
+            if do_merge $name $branch $keep
+            then
+                for ext in $(read_header extended-by .tracking/proposals/$name/proposal)
+                do
+                    if [ $(read_header status .tracking/proposals/$ext/proposal) = "Accepted" ]
+                    then
+                        do_merge $ext $branch
+                    fi
+                done
+                return 0
+            else
+                echo "Automatic merged failed you can perform a merge proposal if you like"
+                return 1
+            fi
+
+            break
+        fi
+    done
 }
 
 # Tests to see if the given array contains the given value

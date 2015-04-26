@@ -11,7 +11,7 @@ if git show-ref --quiet refs/heads/$orig_head; then
     # Check if we need to stash some changes
     if git diff-index --quiet HEAD --; then
         git stash > /dev/null
-        stashed = 1
+        stashed=1
     fi
 fi
 

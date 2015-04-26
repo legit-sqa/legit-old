@@ -92,6 +92,7 @@
 /git-merge-index
 /git-merge-file
 /git-merge-tree
+/git-merge-proposal
 /git-merge-octopus
 /git-merge-one-file
 /git-merge-ours

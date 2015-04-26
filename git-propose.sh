@@ -8,6 +8,8 @@ message=
 user=$(git config user.email)
 user=${user//@/_}
 is_fix=false
+is_merge=false
+merge=
 while test $# != 0
 do
     case "$1" in
@@ -26,6 +28,16 @@ do
             ;;
         -f|--is-fix)
             is_fix=true ;;
+        --is-merge)
+            is_merge=true
+            shift
+            merge=$1
+
+            if test -z "$merge"
+            then
+                usage
+            fi
+            ;;
         *)
             usage
     esac
@@ -84,7 +96,10 @@ if [ -d .tracking/proposals/$name ]; then
     die_neatly "fatal: this proposal already exists"
 fi
 
-parent=(`find_branch_point $name`)
+##if test false = "$is_merge"
+#then
+    parent=(`find_branch_point $name`)
+#fi
 
 if [ $? != 0 ]
 then
@@ -106,7 +121,15 @@ echo "Status: Open" >> proposal
 echo "Votes: 0" >> proposal
 echo "Start: ${parent[0]}" >> proposal
 
-if [ -n "${parent[1]}" ]; then
+if test true = "$is_merge"
+then
+    echo "Merge-of: $merge" >> proposal
+    append_header Merged-By $name ../$merge/proposal
+    git add ../$merge/proposal > /dev/null 2>&1
+fi
+
+if test false = "$is_merge" && [ -n "${parent[1]}" ]
+then
     if test true = "$is_fix"; then
         echo "Fix-of: ${parent[1]}" >> proposal
         append_header Fixed-By $name ../${parent[1]}/proposal

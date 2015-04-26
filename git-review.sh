@@ -2,34 +2,6 @@
 
 . git-legit-setup
 
-do_merge()
-{
-    local name=$1
-    local branch=$2
-
-    git checkout $branch --quiet
-
-    if git merge $name --quiet --no-ff --no-commit > /dev/null 2>&1
-    then
-        git do-commit --quiet -m "Merged: $name"
-
-        git checkout tracking --quiet
-
-        sed "/$name/d" .tracking/proposals/pending | cat > .tracking/proposals/pending
-        git add .tracking/proposals/pending >> /dev/null 2>&1
-
-        replace_header Status Merged .tracking/proposals/$name/proposal
-        git add .tracking/proposals/$name/proposal >> /dev/null 2>&1
-
-        git do-commit --quiet -m "Merged: $name"
-    else
-        git merge --abort
-        return 1
-    fi
-
-    return 0
-}
-
 # Get the commit message
 message=
 user=$(git config user.email)
@@ -197,31 +169,8 @@ then
 
     cd ..
 
-    start=$(read_header start .tracking/proposals/$name/proposal)
-    for branch in $(git branch --contains $start | sed 's/\*//;s/ *//')
-    do
-        # Check if this commit is in a locked branch
-        locked=`git config --file .tracking/config branch.$branch.locked`
-        if [ "$locked" = "true" ]
-        then
-            echo "Attempting to automatically merge..."
-            
-            if do_merge $name $branch
-            then
-                for ext in $(read_header extended-by .tracking/proposals/$name/proposal)
-                do
-                    if [ $(read_header status .tracking/proposals/$ext/proposal) = "Accepted" ]
-                    then
-                        do_merge $ext $branch
-                    fi
-                done
-            else
-                echo "Automatic merged failed you can perform a merge proposal if you like"
-            fi
-
-            break
-        fi
-    done
+    merge $name
+    
 elif test $vote_count -le $(expr $voteThreshold \* -1)
 then
     replace_header Status Rejected ./proposals/$name/proposal
