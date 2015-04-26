@@ -2,6 +2,40 @@
 
 . git-legit-setup
 
+follow_fixes_up()
+{
+    local _commit=$1
+    local _exclude=$2
+
+    for fix in $(read_header fixed-by proposals/$_commit/proposal)
+    do
+        if test -n $_exclude && [ "$fix" != "$_exclude" ]
+        then
+            replace_header Status Auto-Rejected proposals/$fix/proposal
+            git add proposals/$fix/proposal >> /dev/null 2>&1
+
+            follow_fixes_up $fix
+        fi
+    done
+}
+
+follow_fixes_down()
+{
+    local _commit=$1
+    local _fix=$(read_header fix-of proposals/$_commit/proposal)
+
+    if test -n "$_fix"
+    then
+        replace_header Status Auto-Rejected proposals/$_fix/proposal
+
+        git add proposals/$_fix/proposal >> /dev/null 2>&1
+
+        follow_fixes_up $_fix $_commit
+
+        follow_fixes_down $_fix
+    fi
+}
+
 # Get the commit message
 message=
 user=$(git config user.email)
@@ -142,6 +176,9 @@ then
     git add proposals/open >> /dev/null 2>&1
     git add proposals/pending >> /dev/null 2>&1
 
+    follow_fixes_up $name
+    follow_fixes_down $name
+
     for file in $(find proposals/$name/* -printf %f\\n)
     do
         if [[ $file != "proposal" ]] && [ -n "$file" ]
@@ -170,7 +207,7 @@ then
     cd ..
 
     merge $name
-    
+
 elif test $vote_count -le $(expr $voteThreshold \* -1)
 then
     replace_header Status Rejected ./proposals/$name/proposal

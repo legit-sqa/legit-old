@@ -63,32 +63,45 @@ merge()
 {
     local name=$1
     local keep=$2
+    local check=$name
 
-    start=$(read_header start .tracking/proposals/$name/proposal)
-    for branch in $(git branch --contains $start | sed 's/\*//;s/ *//')
+    while true
     do
-        # Check if this commit is in a locked branch
-        locked=`git config --file .tracking/config branch.$branch.locked`
-        if [ "$locked" = "true" ]
-        then
-            echo "Attempting to automatically merge..."
-            
-            if do_merge $name $branch $keep
-            then
-                for ext in $(read_header extended-by .tracking/proposals/$name/proposal)
-                do
-                    if [ $(read_header status .tracking/proposals/$ext/proposal) = "Accepted" ]
-                    then
-                        do_merge $ext $branch
-                    fi
-                done
-                return 0
-            else
-                echo "Automatic merged failed you can perform a merge proposal if you like"
-                return 1
-            fi
+        local start=$(read_header start .tracking/proposals/$check/proposal)
 
-            break
+        for branch in $(git branch --contains $start | sed 's/\*//;s/ *//')
+        do
+            # Check if this commit is in a locked branch
+            local _locked=$(git config --file .tracking/config branch.$branch.locked)
+
+            if test -n "$_locked" && [ "true" = "$_locked" ]
+            then
+                echo "Attempting to automatically merge..."
+                
+                if do_merge $name $branch $keep
+                then
+                    for ext in $(read_header extended-by .tracking/proposals/$name/proposal)
+                    do
+                        if [ $(read_header status .tracking/proposals/$ext/proposal) = "Accepted" ]
+                        then
+                            do_merge $ext $branch
+                        fi
+                    done
+                    return 0
+                else
+                    echo "Automatic merged failed you can perform a merge proposal if you like"
+                    return 1
+                fi
+            fi
+        done
+
+        local _fix=$(read_header fix-of .tracking/proposals/$check/proposal)
+
+        if test -n "$_fix" && [ "$_fix" = "$start" ]
+        then
+            check=$start
+        else
+            return 1
         fi
     done
 }
@@ -142,11 +155,11 @@ read_header()
 
 replace_header()
 {
-    header=$1
-    value=$2
-    file=$3
+    local _header=$1
+    local _value=$2
+    local _file=$3
 
-    cat $file | sed -r "s/^$header:.+\$/$header: $value/I" | cat > $file
+    cat $_file | sed -r "s/^$_header:.+\$/$_header: $_value/I" | cat > $_file
 }
 
 append_header()
